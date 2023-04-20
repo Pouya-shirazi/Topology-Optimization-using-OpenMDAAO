@@ -22,36 +22,34 @@ U=np.zeros((2*(nely+1)*(nelx+1),1))
 class disc3(om.ImplicitComponent):
     
     def initialize(self):
-        self.options.declare('denk')
-        self.options.declare('sK')
-        self.options.declare('U')
+        self.options.declare('denk', default=1.0)
+        self.options.declare('sK', default=1.0)
+        self.options.declare('U', default=1.0)
 
     def setup(self):
-        denk = self.options['denk']
-        sK = self.options['sK']
-        U = self.options['U']
         
         self.add_input('H')
         
         self.add_output('Comp', val=1.0)
         
-        denk=np.sum(input['H'][EleNodesID.astype(int)]**2, axis=1) / 4
-        sK=np.expand_dims(KE.flatten(order='F'),axis=1)@(np.expand_dims(denk.flatten(order='F'),axis=1).T)
 
+        
+    def compute(self, inputs, outputs):
+        self.options['denk']=np.sum(input['H'][EleNodesID.astype(int)]**2, axis=1) / 4
+        self.options['sK']=np.expand_dims(KE.flatten(order='F'),axis=1)@(np.expand_dims(self.options['denk'].flatten(order='F'),axis=1).T)
         #FEA
         # Remove constrained dofs from matrix
         K = coo_matrix((self.options['sK'].flatten(order='F'),(iK.flatten(order='F'),jK.flatten(order='F'))),shape=(2*(nely+1)*(nelx+1),2*(nely+1)*(nelx+1))).tocsc()
         K = K[freedofs,:][:,freedofs]
         # Solve system 
-        U[freedofs,0]=spsolve(K,F[freedofs,0])
+        self.options['U'][freedofs,0]=spsolve(K,F[freedofs,0])
+        
+        outputs['Comp']=(F.T@self.options['U'])
+
         
     def setup_partials(self):
         self.declare_partials('*', '*', method='fd')
         
-        
-    def compute(self, inputs, outputs):
-        outputs['Comp']=F.T@self.options['U']
-
         
         
         
