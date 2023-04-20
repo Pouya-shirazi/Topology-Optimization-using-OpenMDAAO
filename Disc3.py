@@ -29,10 +29,8 @@ class disc3(om.ImplicitComponent):
     def setup(self):
         
         self.add_input('H')
-        
         self.add_output('Comp', val=1.0)
         
-
         
     def compute(self, inputs, outputs):
         self.options['denk']=np.sum(input['H'][EleNodesID.astype(int)]**2, axis=1) / 4
